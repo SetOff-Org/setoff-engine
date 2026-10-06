@@ -63,6 +63,8 @@ must reproduce every vector here. CI checks both sides.
 | `Netter` | The same, incrementally: `add`, `position`, `netting` |
 | `compare(&[Obligation])` | Gross vs. bilateral vs. multilateral settlement per asset |
 | `participants(&[Obligation])` | Each party's flows and the collateral it must post |
+| `net_with(&[Obligation], Strategy::LargestFirst)` | Pair the biggest debtors and creditors first, often with fewer transfers |
+| `validate(&[Obligation])` | Every invalid obligation in one pass, for file imports |
 
 ```console
 $ cargo run --example corridor
