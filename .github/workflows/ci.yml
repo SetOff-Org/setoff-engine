@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt -- --check
+      - run: cargo clippy --all-targets --locked
+      - run: cargo test --locked
+        env:
+          PROPTEST_CASES: "2000"
+
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.88
+      - run: rm rust-toolchain.toml
+      - run: cargo +1.88 check --locked
+
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: No stray working files
+        run: |
+          bad=$(git ls-files | grep -Ei '(^|/)(ISSUE_[0-9]+.*|.*_SUMMARY\.md|IMPLEMENTATION_.*|PR\.md|pr_body\.md|.*\.bak|.*\.orig)$' || true)
+          if [ -n "$bad" ]; then echo "Remove these files from the PR:"; echo "$bad"; exit 1; fi
