@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 
 use proptest::prelude::*;
 use serde::{Deserialize, Serialize};
-use setoff_engine::{Error, Netting, Obligation, compare, net, participants};
+use setoff_engine::{Error, Netter, Netting, Obligation, compare, net, participants};
 
 const VECTORS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/vectors");
 
@@ -235,5 +235,30 @@ proptest! {
         let total_collateral: i128 = participants(&obs).unwrap().iter().map(|p| p.collateral).sum();
         let settled: i128 = net(&obs).unwrap().assets.iter().map(|a| a.settled).sum();
         prop_assert_eq!(total_collateral, settled, "collateral needed equals what netting moves");
+    }
+}
+
+#[test]
+fn a_rejected_obligation_leaves_the_netter_untouched() {
+    let mut n = Netter::default();
+    n.add(&ob("1", "A", "B", "X", i128::MAX)).unwrap();
+    let before = n.netting().unwrap();
+    assert_eq!(n.add(&ob("2", "C", "B", "X", 1)), Err(Error::Overflow));
+    assert_eq!(n.len(), 1);
+    assert_eq!(n.netting().unwrap(), before);
+    assert_eq!(n.position("X", "C"), 0, "the debtor of the rejected obligation was not touched");
+}
+
+proptest! {
+    #[test]
+    fn incremental_netting_matches_batch_netting(obs in window()) {
+        let mut n = Netter::default();
+        for o in &obs {
+            n.add(o).unwrap();
+        }
+        prop_assert_eq!(n.netting().unwrap(), net(&obs).unwrap());
+        for p in net(&obs).unwrap().positions {
+            prop_assert_eq!(n.position(&p.asset, &p.participant), p.net);
+        }
     }
 }

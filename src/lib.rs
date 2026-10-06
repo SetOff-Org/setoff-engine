@@ -146,12 +146,30 @@ pub enum Error {
 
 /// Nets a window of obligations.
 pub fn net(obligations: &[Obligation]) -> Result<Netting, Error> {
-    let mut ids = BTreeSet::new();
-    // asset -> participant -> net
-    let mut book: BTreeMap<&str, BTreeMap<&str, i128>> = BTreeMap::new();
-    let mut totals: BTreeMap<&str, (usize, i128)> = BTreeMap::new();
-
+    let mut n = Netter::default();
     for o in obligations {
+        n.add(o)?;
+    }
+    n.netting()
+}
+
+/// Nets obligations as they arrive, for services that keep a window open.
+///
+/// `add` validates each obligation and either records it or leaves the netter
+/// unchanged; `position` is a map lookup; `netting` produces exactly what
+/// [`net`] would for the same obligations.
+#[derive(Clone, Debug, Default)]
+pub struct Netter {
+    ids: BTreeSet<String>,
+    // asset -> participant -> net
+    book: BTreeMap<String, BTreeMap<String, i128>>,
+    // asset -> (count, gross)
+    totals: BTreeMap<String, (usize, i128)>,
+}
+
+impl Netter {
+    /// Records one obligation, or returns why it is invalid and changes nothing.
+    pub fn add(&mut self, o: &Obligation) -> Result<(), Error> {
         for (field, value) in [("id", &o.id), ("debtor", &o.debtor), ("creditor", &o.creditor), ("asset", &o.asset)] {
             if value.is_empty() {
                 return Err(Error::Empty { id: o.id.clone(), field });
@@ -163,48 +181,72 @@ pub fn net(obligations: &[Obligation]) -> Result<Netting, Error> {
         if o.debtor == o.creditor {
             return Err(Error::SelfObligation(o.id.clone()));
         }
-        if !ids.insert(o.id.as_str()) {
+        if self.ids.contains(&o.id) {
             return Err(Error::DuplicateId(o.id.clone()));
         }
-        let asset = book.entry(&o.asset).or_default();
-        let d = asset.entry(&o.debtor).or_default();
-        *d = d.checked_sub(o.amount).ok_or(Error::Overflow)?;
-        let c = asset.entry(&o.creditor).or_default();
-        *c = c.checked_add(o.amount).ok_or(Error::Overflow)?;
-        let t = totals.entry(&o.asset).or_default();
-        t.0 = t.0.saturating_add(1);
-        t.1 = t.1.checked_add(o.amount).ok_or(Error::Overflow)?;
+        // Compute every new value before writing any, so a failure leaves no trace.
+        let asset = self.book.get(&o.asset);
+        let get = |p: &str| asset.and_then(|a| a.get(p)).copied().unwrap_or(0);
+        let debtor = get(&o.debtor).checked_sub(o.amount).ok_or(Error::Overflow)?;
+        let creditor = get(&o.creditor).checked_add(o.amount).ok_or(Error::Overflow)?;
+        let (count, gross) = self.totals.get(&o.asset).copied().unwrap_or_default();
+        let gross = gross.checked_add(o.amount).ok_or(Error::Overflow)?;
+
+        let book = self.book.entry(o.asset.clone()).or_default();
+        book.insert(o.debtor.clone(), debtor);
+        book.insert(o.creditor.clone(), creditor);
+        self.totals.insert(o.asset.clone(), (count.saturating_add(1), gross));
+        self.ids.insert(o.id.clone());
+        Ok(())
     }
 
-    let mut out = Netting { positions: Vec::new(), transfers: Vec::new(), assets: Vec::new() };
-    for (asset, participants) in &book {
-        let mut debtors: Vec<(&str, i128)> = Vec::new();
-        let mut creditors: Vec<(&str, i128)> = Vec::new();
-        let mut settled: i128 = 0;
-        for (p, n) in participants {
-            if *n != 0 {
-                out.positions.push(Position { asset: (*asset).into(), participant: (*p).into(), net: *n });
-            }
-            if *n < 0 {
-                let owed = n.checked_neg().ok_or(Error::Overflow)?;
-                debtors.push((p, owed));
-                settled = settled.checked_add(owed).ok_or(Error::Overflow)?;
-            } else if *n > 0 {
-                creditors.push((p, *n));
-            }
-        }
-        let first = out.transfers.len();
-        plan(asset, &mut debtors, &mut creditors, &mut out.transfers)?;
-        let (count, gross) = totals.get(asset).copied().unwrap_or_default();
-        out.assets.push(AssetSummary {
-            asset: (*asset).into(),
-            obligations: count,
-            gross,
-            settled,
-            transfers: out.transfers.len().saturating_sub(first),
-        });
+    /// A participant's current net position in an asset.
+    pub fn position(&self, asset: &str, participant: &str) -> i128 {
+        self.book.get(asset).and_then(|a| a.get(participant)).copied().unwrap_or(0)
     }
-    Ok(out)
+
+    /// Obligations recorded so far.
+    pub fn len(&self) -> usize {
+        self.ids.len()
+    }
+
+    /// Whether nothing has been recorded.
+    pub fn is_empty(&self) -> bool {
+        self.ids.is_empty()
+    }
+
+    /// Positions, settlement plan and totals for everything recorded so far.
+    pub fn netting(&self) -> Result<Netting, Error> {
+        let mut out = Netting { positions: Vec::new(), transfers: Vec::new(), assets: Vec::new() };
+        for (asset, participants) in &self.book {
+            let mut debtors: Vec<(&str, i128)> = Vec::new();
+            let mut creditors: Vec<(&str, i128)> = Vec::new();
+            let mut settled: i128 = 0;
+            for (p, n) in participants {
+                if *n != 0 {
+                    out.positions.push(Position { asset: asset.clone(), participant: p.clone(), net: *n });
+                }
+                if *n < 0 {
+                    let owed = n.checked_neg().ok_or(Error::Overflow)?;
+                    debtors.push((p, owed));
+                    settled = settled.checked_add(owed).ok_or(Error::Overflow)?;
+                } else if *n > 0 {
+                    creditors.push((p, *n));
+                }
+            }
+            let first = out.transfers.len();
+            plan(asset, &mut debtors, &mut creditors, &mut out.transfers)?;
+            let (count, gross) = self.totals.get(asset).copied().unwrap_or_default();
+            out.assets.push(AssetSummary {
+                asset: asset.clone(),
+                obligations: count,
+                gross,
+                settled,
+                transfers: out.transfers.len().saturating_sub(first),
+            });
+        }
+        Ok(out)
+    }
 }
 
 /// Pairs debtors with creditors in participant order. Each step fully settles
