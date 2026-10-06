@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 
 use proptest::prelude::*;
 use serde::{Deserialize, Serialize};
-use setoff_engine::{Error, Netter, Netting, Obligation, compare, net, participants};
+use setoff_engine::{Error, Netter, Netting, Obligation, compare, net, participants, validate};
 
 const VECTORS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/vectors");
 
@@ -261,4 +261,19 @@ proptest! {
             prop_assert_eq!(n.position(&p.asset, &p.participant), p.net);
         }
     }
+}
+
+#[test]
+fn validate_reports_every_bad_obligation() {
+    let window = [
+        ob("1", "A", "B", "X", 5),
+        ob("2", "A", "A", "X", 5),
+        ob("3", "A", "B", "X", 0),
+        ob("1", "B", "C", "X", 5),
+        ob("4", "", "C", "X", 5),
+    ];
+    let problems = validate(&window);
+    assert_eq!(problems.iter().map(|(i, _)| *i).collect::<Vec<_>>(), vec![1, 2, 3, 4]);
+    assert_eq!(problems[2].1, Error::DuplicateId("1".into()));
+    assert!(validate(&scenarios()[2].2).is_empty());
 }

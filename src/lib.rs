@@ -154,6 +154,15 @@ pub enum Error {
     Overflow,
 }
 
+/// Every problem in a window, in input order, instead of stopping at the first.
+///
+/// Useful when importing obligations from a file: one pass lists every bad
+/// row. Overflow is detected cumulatively, as `net` would.
+pub fn validate(obligations: &[Obligation]) -> Vec<(usize, Error)> {
+    let mut n = Netter::default();
+    obligations.iter().enumerate().filter_map(|(i, o)| n.add(o).err().map(|e| (i, e))).collect()
+}
+
 /// Nets a window of obligations.
 pub fn net(obligations: &[Obligation]) -> Result<Netting, Error> {
     let mut n = Netter::default();

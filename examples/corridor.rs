@@ -7,7 +7,8 @@
 use setoff_engine::{Obligation, compare, net, participants};
 
 fn main() {
-    let ob = |id: &str, d: &str, c: &str, asset: &str, units: i128| Obligation::new(id, d, c, asset, units * 10_000_000);
+    let ob =
+        |id: &str, d: &str, c: &str, asset: &str, units: i128| Obligation::new(id, d, c, asset, units * 10_000_000);
     let window = [
         ob("1", "anchor-ng", "anchor-us", "USDC", 500),
         ob("2", "anchor-us", "anchor-ng", "USDC", 320),
