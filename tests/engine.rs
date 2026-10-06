@@ -6,7 +6,9 @@ use std::collections::BTreeMap;
 
 use proptest::prelude::*;
 use serde::{Deserialize, Serialize};
-use setoff_engine::{Error, Netter, Netting, Obligation, compare, net, participants, validate};
+use setoff_engine::{
+    Error, Netter, Netting, Obligation, Strategy as Plan, compare, net, net_with, participants, validate,
+};
 
 const VECTORS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/vectors");
 
@@ -276,4 +278,35 @@ fn validate_reports_every_bad_obligation() {
     assert_eq!(problems.iter().map(|(i, _)| *i).collect::<Vec<_>>(), vec![1, 2, 3, 4]);
     assert_eq!(problems[2].1, Error::DuplicateId("1".into()));
     assert!(validate(&scenarios()[2].2).is_empty());
+}
+
+#[test]
+fn largest_first_pairs_big_debtors_with_big_creditors() {
+    // D1 owes 100, D2 owes 10; C1 is owed 10, C2 is owed 100.
+    let window = [ob("1", "D1", "C2", "X", 100), ob("2", "D2", "C1", "X", 10)];
+    let ordered = net(&window).unwrap();
+    let largest = net_with(&window, Plan::LargestFirst).unwrap();
+    assert_eq!(ordered.transfers.len(), 3, "id order splits D1's debt");
+    assert_eq!(largest.transfers.len(), 2, "largest-first matches 100 with 100");
+    assert_eq!(largest.positions, ordered.positions);
+}
+
+proptest! {
+    #[test]
+    fn every_strategy_settles_exactly(obs in window()) {
+        let n = net_with(&obs, Plan::LargestFirst).unwrap();
+        let mut moved: BTreeMap<(&str, &str), i128> = BTreeMap::new();
+        for t in &n.transfers {
+            *moved.entry((&t.asset, &t.from)).or_default() -= t.amount;
+            *moved.entry((&t.asset, &t.to)).or_default() += t.amount;
+        }
+        for p in &n.positions {
+            prop_assert_eq!(moved.get(&(p.asset.as_str(), p.participant.as_str())).copied().unwrap_or(0), p.net);
+        }
+        for a in &n.assets {
+            let k = n.positions.iter().filter(|p| p.asset == a.asset).count();
+            prop_assert!(a.transfers <= k.saturating_sub(1));
+        }
+        prop_assert_eq!(n.positions, net(&obs).unwrap().positions);
+    }
 }

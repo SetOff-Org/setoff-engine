@@ -163,6 +163,31 @@ pub fn validate(obligations: &[Obligation]) -> Vec<(usize, Error)> {
     obligations.iter().enumerate().filter_map(|(i, o)| n.add(o).err().map(|e| (i, e))).collect()
 }
 
+/// How the settlement plan pairs debtors with creditors.
+///
+/// Both strategies settle every position exactly with at most `k - 1`
+/// transfers; they differ only in which pairs pay each other.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Strategy {
+    /// Walk debtors and creditors in participant-id order. The default, and
+    /// the one every reference vector (and every other implementation) uses.
+    #[default]
+    ParticipantOrder,
+    /// Pair the largest debtors with the largest creditors first (ties by id).
+    /// Tends to produce fewer, larger transfers.
+    LargestFirst,
+}
+
+/// Nets a window with a chosen plan strategy.
+pub fn net_with(obligations: &[Obligation], strategy: Strategy) -> Result<Netting, Error> {
+    let mut n = Netter::default();
+    for o in obligations {
+        n.add(o)?;
+    }
+    n.netting_with(strategy)
+}
+
 /// Nets a window of obligations.
 pub fn net(obligations: &[Obligation]) -> Result<Netting, Error> {
     let mut n = Netter::default();
@@ -241,6 +266,11 @@ impl Netter {
 
     /// Positions, settlement plan and totals for everything recorded so far.
     pub fn netting(&self) -> Result<Netting, Error> {
+        self.netting_with(Strategy::ParticipantOrder)
+    }
+
+    /// Like [`Netter::netting`], with a chosen plan strategy.
+    pub fn netting_with(&self, strategy: Strategy) -> Result<Netting, Error> {
         let mut out = Netting { positions: Vec::new(), transfers: Vec::new(), assets: Vec::new() };
         for (asset, participants) in &self.book {
             let mut debtors: Vec<(&str, i128)> = Vec::new();
@@ -259,6 +289,11 @@ impl Netter {
                 }
             }
             let first = out.transfers.len();
+            if strategy == Strategy::LargestFirst {
+                // Descending by amount, then by participant id, so the order is still total.
+                debtors.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(b.0)));
+                creditors.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(b.0)));
+            }
             plan(asset, &mut debtors, &mut creditors, &mut out.transfers)?;
             let (count, gross) = self.totals.get(asset).copied().unwrap_or_default();
             out.assets.push(AssetSummary {
