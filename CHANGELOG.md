@@ -15,6 +15,7 @@ All notable changes to this project are documented here. The format follows
 - `compare()`: gross vs. bilateral vs. multilateral settlement per asset.
 - `participants()`: each party's flows and required collateral.
 - `validate()`: every invalid obligation in one pass.
+- `read_csv()` (`csv` feature) and a public canonical `parse_amount()`.
 - `Netting::for_participant()` and collecting obligations into a `Netter`.
 - `no_std` + `alloc` builds (default features off), checked for `wasm32v1-none`.
 - Reference vectors with a written format (`docs/vectors.md`) and an algorithm
