@@ -340,3 +340,14 @@ fn netters_collect_from_iterators() {
     let bad: Result<Netter, Error> = [ob("1", "A", "A", "X", 1)].iter().collect();
     assert!(bad.is_err());
 }
+
+#[test]
+fn analysis_reports_overflow_instead_of_wrapping() {
+    let huge = [ob("1", "A", "B", "X", i128::MAX), ob("2", "C", "B", "X", 1)];
+    assert_eq!(compare(&huge), Err(Error::Overflow));
+    assert_eq!(participants(&huge), Err(Error::Overflow));
+    assert_eq!(validate(&huge).len(), 1);
+    // One maximal obligation on its own is fine: nothing overflows.
+    let one = compare(&huge[..1]).unwrap();
+    assert_eq!((one[0].gross, one[0].bilateral, one[0].multilateral), (i128::MAX, i128::MAX, i128::MAX));
+}
