@@ -200,7 +200,8 @@ pub enum Strategy {
     #[default]
     ParticipantOrder,
     /// Pair the largest debtors with the largest creditors first (ties by id).
-    /// Tends to produce fewer, larger transfers.
+    /// Saves transfers when debt and credit sizes match; on unstructured
+    /// windows both strategies typically hit the `k - 1` bound.
     LargestFirst,
 }
 
