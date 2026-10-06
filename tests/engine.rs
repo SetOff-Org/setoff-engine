@@ -310,3 +310,15 @@ proptest! {
         prop_assert_eq!(n.positions, net(&obs).unwrap().positions);
     }
 }
+
+proptest! {
+    #[test]
+    fn json_round_trips_every_value(obs in window(), extreme in any::<i128>()) {
+        let n = net(&obs).unwrap();
+        let back: Netting = serde_json::from_str(&serde_json::to_string(&n).unwrap()).unwrap();
+        prop_assert_eq!(back, n);
+        let o = ob("x", "A", "B", "X", extreme);
+        let back: Obligation = serde_json::from_str(&serde_json::to_string(&o).unwrap()).unwrap();
+        prop_assert_eq!(back.amount, extreme, "i128 survives JSON as a string");
+    }
+}
