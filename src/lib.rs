@@ -34,7 +34,11 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 mod analysis;
+#[cfg(feature = "csv")]
+mod csv_input;
 pub use analysis::{Comparison, ParticipantSummary, compare, participants};
+#[cfg(feature = "csv")]
+pub use csv_input::{CsvError, read_csv};
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
@@ -370,6 +374,14 @@ fn plan(
     Ok(())
 }
 
+/// Parses a canonical decimal integer (no `+`, no leading zeros, no `-0`).
+pub fn parse_amount(s: &str) -> Option<i128> {
+    if s.is_empty() || s.starts_with('+') || (s.len() > 1 && s.trim_start_matches('-').starts_with('0')) {
+        return None;
+    }
+    s.parse().ok()
+}
+
 /// Amounts travel as decimal strings: JSON numbers cannot hold an i128.
 mod amount {
     use super::*;
@@ -380,9 +392,6 @@ mod amount {
 
     pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<i128, D::Error> {
         let s = String::deserialize(d)?;
-        if s.is_empty() || s.starts_with('+') || (s.len() > 1 && s.trim_start_matches('-').starts_with('0')) {
-            return Err(serde::de::Error::custom(format!("not a canonical integer: {s:?}")));
-        }
-        s.parse().map_err(serde::de::Error::custom)
+        super::parse_amount(&s).ok_or_else(|| serde::de::Error::custom(format!("not a canonical integer: {s:?}")))
     }
 }

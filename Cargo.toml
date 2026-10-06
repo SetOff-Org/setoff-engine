@@ -15,10 +15,13 @@ authors = ["SetOff"]
 default = ["std"]
 # Disable for no_std + alloc targets (Soroban contracts, zkVMs, wasm32v1-none).
 std = ["serde/std", "thiserror/std"]
+# read_csv(): obligations from the CSV format `setoff net` uses.
+csv = ["std", "dep:csv"]
 
 [dependencies]
 serde = { version = "1", default-features = false, features = ["derive", "alloc"] }
 thiserror = { version = "2", default-features = false }
+csv = { version = "1.4", optional = true }
 
 [dev-dependencies]
 serde_json = "1"
