@@ -44,9 +44,36 @@ Each is a property test over randomly generated windows:
 - Arithmetic is checked over `i128`; amounts travel as canonical decimal
   strings, because JSON numbers can't hold an `i128`.
 
+- Multilateral settlement never moves more than bilateral netting, which never
+  moves more than gross settlement.
+- Incremental netting (`Netter`) produces exactly what batch netting does, and
+  a rejected obligation leaves no trace.
+
+Why each holds is written up in [docs/algorithm.md](docs/algorithm.md).
+
 Order independence is what lets a second implementation agree exactly.
 [setoff-clearing](https://github.com/SetOff-Org/setoff-clearing) nets in Go and
 must reproduce every vector here. CI checks both sides.
+
+## API
+
+| Item | What it does |
+|---|---|
+| `net(&[Obligation])` | Positions, settlement plan and per-asset totals |
+| `Netter` | The same, incrementally: `add`, `position`, `netting` |
+| `compare(&[Obligation])` | Gross vs. bilateral vs. multilateral settlement per asset |
+| `participants(&[Obligation])` | Each party's flows and the collateral it must post |
+
+```console
+$ cargo run --example corridor
+asset       gross  bilateral  multilateral    saved
+EURC       135.00       5.00          5.00    96.3%
+USDC      1145.00     325.00        290.00    74.7%
+```
+
+The crate is `no_std` + `alloc` with default features off, so the same code
+runs in a Soroban contract or a zkVM; CI builds it for `wasm32v1-none`. It nets
+1,000 obligations in about 1.7 ms and 100,000 in about 0.29 s (`cargo bench`).
 
 ## Updating the vectors
 
