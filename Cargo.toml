@@ -11,9 +11,14 @@ repository = "https://github.com/SetOff-Org/setoff-engine"
 homepage = "https://github.com/SetOff-Org"
 authors = ["SetOff"]
 
+[features]
+default = ["std"]
+# Disable for no_std + alloc targets (Soroban contracts, zkVMs, wasm32v1-none).
+std = ["serde/std", "thiserror/std"]
+
 [dependencies]
-serde = { version = "1", features = ["derive"] }
-thiserror = "2"
+serde = { version = "1", default-features = false, features = ["derive", "alloc"] }
+thiserror = { version = "2", default-features = false }
 
 [dev-dependencies]
 serde_json = "1"

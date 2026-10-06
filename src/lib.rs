@@ -20,8 +20,18 @@
 //! The output depends only on the set of obligations, never on their order,
 //! so independent implementations agree byte for byte. `tests/vectors` holds
 //! the reference cases.
+//!
+//! The crate is `no_std` with `alloc` when the default `std` feature is off,
+//! so the same algorithm can run inside a Soroban contract or a zkVM.
 
-use std::collections::{BTreeMap, BTreeSet};
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
+
+use alloc::collections::{BTreeMap, BTreeSet};
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
 
 mod analysis;
 pub use analysis::{Comparison, ParticipantSummary, compare, participants};

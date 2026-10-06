@@ -24,6 +24,13 @@ jobs:
         env:
           PROPTEST_CASES: "2000"
 
+  no-std:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --locked --no-default-features --target wasm32v1-none
+
   msrv:
     runs-on: ubuntu-latest
     steps:
