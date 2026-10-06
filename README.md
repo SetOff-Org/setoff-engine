@@ -66,6 +66,7 @@ must reproduce every vector here. CI checks both sides.
 | `net_with(&[Obligation], Strategy::LargestFirst)` | Pair the biggest debtors and creditors first; saves transfers when debt and credit sizes match, otherwise ties the default |
 | `validate(&[Obligation])` | Every invalid obligation in one pass, for file imports |
 | `read_csv(reader)` | Obligations from `id,debtor,creditor,asset,amount` CSV (`csv` feature) |
+| `write_plan_csv(writer, &netting)` | The settlement plan as `asset,from,to,amount` CSV, for payments systems (`csv` feature) |
 
 ```console
 $ cargo run --example corridor
