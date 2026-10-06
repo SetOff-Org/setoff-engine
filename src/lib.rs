@@ -17,6 +17,21 @@
 //! # Ok::<(), setoff_engine::Error>(())
 //! ```
 //!
+//! [`compare`] shows what netting saves against gross and bilateral settlement,
+//! and [`participants`] how much collateral each party needs:
+//!
+//! ```
+//! use setoff_engine::{Obligation, compare, participants};
+//!
+//! let ob = |id: &str, from: &str, to: &str, amount| Obligation::new(id, from, to, "USDC", amount);
+//! let window = [ob("1", "A", "B", 100), ob("2", "B", "C", 100), ob("3", "C", "A", 60)];
+//! let c = &compare(&window)?[0];
+//! assert_eq!((c.gross, c.bilateral, c.multilateral), (260, 260, 40));
+//! let need: Vec<_> = participants(&window)?.into_iter().filter(|p| p.collateral > 0).collect();
+//! assert_eq!((need[0].participant.as_str(), need[0].collateral), ("A", 40));
+//! # Ok::<(), setoff_engine::Error>(())
+//! ```
+//!
 //! The output depends only on the set of obligations, never on their order,
 //! so independent implementations agree byte for byte. `tests/vectors` holds
 //! the reference cases.
