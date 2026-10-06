@@ -202,10 +202,15 @@ impl Netter {
         let (count, gross) = self.totals.get(&o.asset).copied().unwrap_or_default();
         let gross = gross.checked_add(o.amount).ok_or(Error::Overflow)?;
 
-        let book = self.book.entry(o.asset.clone()).or_default();
-        book.insert(o.debtor.clone(), debtor);
-        book.insert(o.creditor.clone(), creditor);
-        self.totals.insert(o.asset.clone(), (count.saturating_add(1), gross));
+        // Only allocate keys the maps have not seen: assets and participants repeat constantly.
+        if !self.book.contains_key(&o.asset) {
+            self.book.insert(o.asset.clone(), BTreeMap::new());
+        }
+        if let Some(book) = self.book.get_mut(&o.asset) {
+            set(book, &o.debtor, debtor);
+            set(book, &o.creditor, creditor);
+        }
+        set(&mut self.totals, &o.asset, (count.saturating_add(1), gross));
         self.ids.insert(o.id.clone());
         Ok(())
     }
@@ -256,6 +261,16 @@ impl Netter {
             });
         }
         Ok(out)
+    }
+}
+
+/// Updates `key` in place, cloning it only when it is new.
+fn set<V>(map: &mut BTreeMap<String, V>, key: &str, value: V) {
+    match map.get_mut(key) {
+        Some(slot) => *slot = value,
+        None => {
+            map.insert(key.into(), value);
+        }
     }
 }
 

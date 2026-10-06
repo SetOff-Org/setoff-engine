@@ -17,7 +17,13 @@ fn window(n: usize, participants: usize) -> Vec<Obligation> {
             let d = next() % participants;
             let c = (d + 1 + next() % (participants - 1)) % participants;
             let asset = if next() % 4 == 0 { "EURC" } else { "USDC" };
-            Obligation::new(&format!("{i}"), &format!("P{d}"), &format!("P{c}"), asset, (1 + next() % 1_000_000) as i128)
+            Obligation::new(
+                &format!("{i}"),
+                &format!("P{d}"),
+                &format!("P{c}"),
+                asset,
+                (1 + next() % 1_000_000) as i128,
+            )
         })
         .collect()
 }
