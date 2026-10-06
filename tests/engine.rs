@@ -322,3 +322,21 @@ proptest! {
         prop_assert_eq!(back.amount, extreme, "i128 survives JSON as a string");
     }
 }
+
+#[test]
+fn each_participant_sees_its_own_slice() {
+    let n = net(&scenarios()[2].2).unwrap();
+    let (positions, transfers) = n.for_participant("anchor-ng");
+    assert!(positions.iter().all(|p| p.participant == "anchor-ng"));
+    assert_eq!(transfers.len(), 3, "pays ke and us in USDC, receives from eu in EURC");
+    assert!(n.for_participant("nobody").0.is_empty());
+}
+
+#[test]
+fn netters_collect_from_iterators() {
+    let obs = &scenarios()[4].2;
+    let n: Result<Netter, Error> = obs.iter().collect();
+    assert_eq!(n.unwrap().netting().unwrap(), net(obs).unwrap());
+    let bad: Result<Netter, Error> = [ob("1", "A", "A", "X", 1)].iter().collect();
+    assert!(bad.is_err());
+}

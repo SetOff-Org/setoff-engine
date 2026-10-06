@@ -128,6 +128,16 @@ pub struct Netting {
     pub assets: Vec<AssetSummary>,
 }
 
+impl Netting {
+    /// One participant's view: its positions and the transfers it sends or receives.
+    pub fn for_participant(&self, participant: &str) -> (Vec<&Position>, Vec<&Transfer>) {
+        (
+            self.positions.iter().filter(|p| p.participant == participant).collect(),
+            self.transfers.iter().filter(|t| t.from == participant || t.to == participant).collect(),
+        )
+    }
+}
+
 /// Why a window cannot be netted.
 #[derive(Debug, Error, PartialEq, Eq)]
 #[non_exhaustive]
@@ -161,6 +171,17 @@ pub enum Error {
 pub fn validate(obligations: &[Obligation]) -> Vec<(usize, Error)> {
     let mut n = Netter::default();
     obligations.iter().enumerate().filter_map(|(i, o)| n.add(o).err().map(|e| (i, e))).collect()
+}
+
+impl<'a> FromIterator<&'a Obligation> for Result<Netter, Error> {
+    /// Collects obligations into a netter, stopping at the first invalid one.
+    fn from_iter<I: IntoIterator<Item = &'a Obligation>>(iter: I) -> Self {
+        let mut n = Netter::default();
+        for o in iter {
+            n.add(o)?;
+        }
+        Ok(n)
+    }
 }
 
 /// How the settlement plan pairs debtors with creditors.
