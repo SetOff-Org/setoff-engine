@@ -3,7 +3,7 @@
 #![allow(clippy::unwrap_used, clippy::arithmetic_side_effects, missing_docs)]
 
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
-use setoff_engine::{Obligation, net};
+use setoff_engine::{Obligation, Strategy, net, net_with};
 
 /// `n` obligations among `participants`, two assets, from a fixed seed.
 fn window(n: usize, participants: usize) -> Vec<Obligation> {
@@ -33,6 +33,16 @@ fn bench(c: &mut Criterion) {
     for (n, p) in [(1_000, 20), (10_000, 100), (100_000, 500)] {
         let obs = window(n, p);
         group.bench_with_input(BenchmarkId::new("obligations", n), &obs, |b, obs| b.iter(|| net(obs).unwrap()));
+    }
+    group.finish();
+
+    let obs = window(10_000, 100);
+    let ordered: usize = net(&obs).unwrap().transfers.len();
+    let largest: usize = net_with(&obs, Strategy::LargestFirst).unwrap().transfers.len();
+    println!("10k obligations: {ordered} transfers in participant order, {largest} largest-first");
+    let mut group = c.benchmark_group("strategy");
+    for s in [Strategy::ParticipantOrder, Strategy::LargestFirst] {
+        group.bench_function(format!("{s:?}"), |b| b.iter(|| net_with(&obs, s).unwrap()));
     }
     group.finish();
 }
