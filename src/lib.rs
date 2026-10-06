@@ -23,6 +23,9 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+mod analysis;
+pub use analysis::{Comparison, ParticipantSummary, compare, participants};
+
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
 

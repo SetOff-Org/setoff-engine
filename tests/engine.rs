@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 
 use proptest::prelude::*;
 use serde::{Deserialize, Serialize};
-use setoff_engine::{Error, Netting, Obligation, net};
+use setoff_engine::{Error, Netting, Obligation, compare, net, participants};
 
 const VECTORS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/vectors");
 
@@ -196,5 +196,44 @@ proptest! {
             shuffled.swap(i, (x >> 33) as usize % (i + 1));
         }
         prop_assert_eq!(net(&obs).unwrap(), net(&shuffled).unwrap());
+    }
+}
+
+#[test]
+fn bilateral_netting_sits_between_gross_and_multilateral() {
+    let corridor = &scenarios()[2].2;
+    let usdc = compare(corridor).unwrap().into_iter().find(|c| c.asset == "USDC").unwrap();
+    assert_eq!(usdc.gross, 11_450_000_000);
+    // ng<->us offset 5000 vs 3200, ke<->us 900 vs 1250, ng->ke 1100 alone.
+    assert_eq!(usdc.bilateral, 1_800_000_000 + 350_000_000 + 1_100_000_000);
+    assert_eq!(usdc.multilateral, 2_900_000_000);
+    assert!(usdc.multilateral <= usdc.bilateral);
+    assert_eq!(usdc.bilateral_transfers, 3);
+}
+
+#[test]
+fn a_cycle_is_invisible_to_bilateral_netting() {
+    let cycle = compare(&scenarios()[0].2).unwrap();
+    assert_eq!((cycle[0].gross, cycle[0].bilateral, cycle[0].multilateral), (300, 300, 0));
+}
+
+#[test]
+fn participant_summaries_add_up() {
+    let s = participants(&scenarios()[1].2).unwrap();
+    assert_eq!(s.len(), 2);
+    let a = &s[0];
+    assert_eq!((a.participant.as_str(), a.owes, a.owed, a.net, a.collateral), ("A", 100, 60, -40, 40));
+    assert_eq!(s[1].collateral, 0);
+}
+
+proptest! {
+    #[test]
+    fn netting_never_moves_more_than_bilateral_or_gross(obs in window()) {
+        for c in compare(&obs).unwrap() {
+            prop_assert!(c.multilateral <= c.bilateral && c.bilateral <= c.gross);
+        }
+        let total_collateral: i128 = participants(&obs).unwrap().iter().map(|p| p.collateral).sum();
+        let settled: i128 = net(&obs).unwrap().assets.iter().map(|a| a.settled).sum();
+        prop_assert_eq!(total_collateral, settled, "collateral needed equals what netting moves");
     }
 }
