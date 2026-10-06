@@ -1,12 +1,13 @@
-//! Reading obligations from CSV (`csv` feature).
+//! CSV in and out (`csv` feature).
 //!
-//! The header must be exactly `id,debtor,creditor,asset,amount`, the format
-//! `setoff net` reads. Amounts are canonical integers in the asset's smallest
-//! unit, as in JSON.
+//! Obligations are read with the header `id,debtor,creditor,asset,amount`, the
+//! format `setoff net` reads. The settlement plan is written as
+//! `asset,from,to,amount`, ready for a payments system to import. Amounts are
+//! canonical integers in the asset's smallest unit, as in JSON.
 
-use std::io::Read;
+use std::io::{Read, Write};
 
-use crate::{Obligation, parse_amount};
+use crate::{Netting, Obligation, parse_amount};
 
 /// A CSV row that could not be read.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
@@ -38,4 +39,18 @@ pub fn read_csv(reader: impl Read) -> Result<Vec<Obligation>, CsvError> {
         out.push(Obligation { id: field(0), debtor: field(1), creditor: field(2), asset: field(3), amount });
     }
     Ok(out)
+}
+
+/// Header of the plan CSV.
+pub const PLAN_HEADER: [&str; 4] = ["asset", "from", "to", "amount"];
+
+/// Writes the settlement plan, one transfer per row, in plan order.
+pub fn write_plan_csv(writer: impl Write, netting: &Netting) -> Result<(), csv::Error> {
+    let mut w = csv::Writer::from_writer(writer);
+    w.write_record(PLAN_HEADER)?;
+    for t in &netting.transfers {
+        w.write_record([t.asset.as_str(), t.from.as_str(), t.to.as_str(), &t.amount.to_string()])?;
+    }
+    w.flush()?;
+    Ok(())
 }

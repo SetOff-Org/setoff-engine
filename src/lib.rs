@@ -53,7 +53,7 @@ mod analysis;
 mod csv_input;
 pub use analysis::{Comparison, ParticipantSummary, compare, participants};
 #[cfg(feature = "csv")]
-pub use csv_input::{CsvError, read_csv};
+pub use csv_input::{CsvError, PLAN_HEADER, read_csv, write_plan_csv};
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
