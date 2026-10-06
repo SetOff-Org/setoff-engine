@@ -49,12 +49,14 @@ advances both. With `k = d + c` non-zero positions that is `k − 1` transfers.
 Finding the *minimum* number of transfers is NP-hard in general (it contains
 subset sum), so the engine takes this bound and determinism over optimality.
 
-**Never worse than bilateral netting.** Bilateral netting settles each
-pair's difference `|owed(x→y) − owed(y→x)|`. Summing over a participant's
-pairs, the triangle inequality gives
-`|net(p)| ≤ Σ_q |pair difference(p, q)|`, so multilateral settlement,
-`Σ_p max(0, −net(p))`, never exceeds bilateral settlement, which in turn
-never exceeds gross.
+**Never worse than bilateral netting.** Let `d(p, q) = owed(q→p) − owed(p→q)`.
+Bilateral netting settles each pair's difference, moving
+`B = Σ_{pairs} |d(p, q)| = ½ Σ_p Σ_q |d(p, q)|` (each pair appears twice in the
+double sum). Since `net(p) = Σ_q d(p, q)`, the triangle inequality gives
+`|net(p)| ≤ Σ_q |d(p, q)|`. Multilateral settlement moves
+`M = Σ_p max(0, −net(p)) = ½ Σ_p |net(p)|` (by conservation), so
+`M ≤ ½ Σ_p Σ_q |d(p, q)| = B`. And `B ≤ gross` because each pair's difference
+is at most the pair's total. So `multilateral ≤ bilateral ≤ gross`.
 
 ## Determinism
 
