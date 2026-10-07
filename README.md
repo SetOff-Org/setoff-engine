@@ -32,6 +32,17 @@ What the reference cases in [`tests/vectors`](tests/vectors) show:
 | 200 pseudo-random, USDC | 145 | 715.48 → 141.83 | 80.2% | 11 |
 | Fan-in to one merchant | 5 | 150 → 150 | 0% | 5 |
 
+## Install
+
+```sh
+cargo add setoff-engine --git https://github.com/SetOff-Org/setoff-engine --tag v0.1.0
+```
+
+The crate is `no_std` with `alloc` when built with `default-features = false`,
+so it also runs in Soroban contracts, zkVMs and the browser. Try the
+[netting simulator](https://setoff-org.github.io/setoff-engine/), which runs
+this engine compiled to WebAssembly.
+
 ## Guarantees
 
 Each is a property test over randomly generated windows:
