@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-07
+
 ### Added
 
 - `net()`: positions, a settlement plan with at most k−1 transfers per asset,
@@ -24,4 +26,5 @@ All notable changes to this project are documented here. The format follows
   write-up with proofs (`docs/algorithm.md`).
 - Benchmarks: 100,000 obligations in about 0.29 s.
 
-[Unreleased]: https://github.com/SetOff-Org/setoff-engine/commits/main
+[Unreleased]: https://github.com/SetOff-Org/setoff-engine/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/SetOff-Org/setoff-engine/releases/tag/v0.1.0
