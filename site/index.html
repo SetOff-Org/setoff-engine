@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SetOff netting simulator</title>
+  <meta name="description" content="See how much liquidity multilateral netting frees: enter who owes whom and SetOff's engine computes net positions and the minimal settlement plan, in your browser.">
+  <link rel="icon" href="logo.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="https://github.com/SetOff-Org" aria-label="SetOff on GitHub">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="logo-dark.svg">
+      <img src="logo.svg" alt="SetOff" height="36">
+    </picture>
+  </a>
+  <nav>
+    <a href="https://github.com/SetOff-Org/setoff-engine">Engine</a>
+    <a href="https://github.com/SetOff-Org/setoff-contracts">Contract</a>
+    <a href="https://github.com/SetOff-Org/setoff-clearing">Clearing service</a>
+  </nav>
+</header>
+
+<main>
+  <section class="intro">
+    <h1>Settle the net, not every payment</h1>
+    <p>Participants who owe each other all day don't each need to pre-fund their whole outflow.
+      Enter who owes whom; SetOff's netting engine, the same Rust code that clears windows on
+      Stellar, computes each net position and the fewest transfers that settle them.
+      Everything runs in this page.</p>
+  </section>
+
+  <div class="layout">
+    <section class="panel" aria-labelledby="obligations-h">
+      <div class="panel-head">
+        <h2 id="obligations-h">Obligations</h2>
+        <div class="examples" role="group" aria-label="Load an example">
+          <span>Examples:</span>
+          <button type="button" data-example="corridor">Remittance corridor</button>
+          <button type="button" data-example="cycle">Three-way cycle</button>
+          <button type="button" data-example="merchant">Fan-in to a merchant</button>
+          <button type="button" data-example="random">Random 40</button>
+        </div>
+      </div>
+      <p class="hint">Amounts are whole units of the asset. Each row is one obligation: the debtor owes the creditor.</p>
+      <table class="obligations">
+        <thead><tr><th scope="col">Debtor</th><th scope="col">Creditor</th><th scope="col">Asset</th><th scope="col" class="num">Amount</th><th scope="col"><span class="sr">Remove</span></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="empty" id="empty" hidden>
+        <p><strong>No obligations yet.</strong> Load an example above, or add the first one.</p>
+      </div>
+      <div class="row-actions">
+        <button type="button" id="add" class="primary">Add obligation</button>
+        <button type="button" id="clear">Clear</button>
+        <button type="button" id="share">Copy link to this scenario</button>
+        <span class="status" id="share-status" role="status"></span>
+      </div>
+      <label class="strategy">Plan strategy
+        <select id="strategy">
+          <option value="participant-order">Participant order (reference)</option>
+          <option value="largest-first">Largest first</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="panel results" aria-labelledby="results-h" aria-live="polite">
+      <h2 id="results-h">Result</h2>
+      <div id="results"><p class="muted" id="loading">Loading the netting engine…</p></div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <p>The engine is <a href="https://github.com/SetOff-Org/setoff-engine">setoff-engine</a>, compiled to WebAssembly.
+    It produces exactly the output of every <a href="https://github.com/SetOff-Org/setoff-engine/tree/main/tests/vectors">reference vector</a>.
+    Settle on Stellar with the <a href="https://github.com/SetOff-Org/setoff-contracts">settlement contract</a>.</p>
+</footer>
+<script type="module" src="app.js"></script>
+</body>
+</html>
