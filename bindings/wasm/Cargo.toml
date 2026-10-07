@@ -1,0 +1,22 @@
+[package]
+name = "setoff-engine-wasm"
+description = "The SetOff netting engine for JavaScript, via wasm-bindgen."
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "Apache-2.0"
+repository = "https://github.com/SetOff-Org/setoff-engine"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+setoff-engine = { path = "../.." }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+wasm-bindgen = "0.2"
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"

@@ -11,6 +11,9 @@ repository = "https://github.com/SetOff-Org/setoff-engine"
 homepage = "https://github.com/SetOff-Org"
 authors = ["SetOff"]
 
+[workspace]
+members = [".", "bindings/wasm"]
+
 [features]
 default = ["std"]
 # Disable for no_std + alloc targets (Soroban contracts, zkVMs, wasm32v1-none).
