@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `setoff-engine-wasm` (`bindings/wasm`): the netting engine for JavaScript,
+  with per-row validation errors and both plan strategies.
+- A [netting simulator](https://setoff-org.github.io/setoff-engine/) on
+  GitHub Pages, with examples, live editing and shareable scenarios.
+
 ## [0.1.0] - 2026-10-07
 
 ### Added
