@@ -35,6 +35,19 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo build --locked --no-default-features --target wasm32v1-none
 
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --release --locked -p setoff-engine-wasm --target wasm32-unknown-unknown
+      - name: The reference vectors, through WebAssembly in Node
+        run: |
+          version=$(cargo metadata --format-version 1 --locked | jq -r '.packages[] | select(.name == "wasm-bindgen") | .version')
+          cargo install wasm-bindgen-cli --version "$version" --locked
+          wasm-bindgen --target nodejs --out-dir bindings/wasm/pkg-node target/wasm32-unknown-unknown/release/setoff_engine_wasm.wasm
+          node --test bindings/wasm/test/vectors.mjs
+
   deny:
     runs-on: ubuntu-latest
     steps:

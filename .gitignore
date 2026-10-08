@@ -1,2 +1,3 @@
 target/
 site/pkg/
+bindings/wasm/pkg-node/
