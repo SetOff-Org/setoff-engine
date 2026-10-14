@@ -27,8 +27,8 @@ jobs:
           version=$(cargo metadata --format-version 1 --locked | jq -r '.packages[] | select(.name == "wasm-bindgen") | .version')
           cargo install wasm-bindgen-cli --version "$version" --locked
           wasm-bindgen --target web --out-dir site/pkg target/wasm32-unknown-unknown/release/setoff_engine_wasm.wasm
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
@@ -40,4 +40,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
