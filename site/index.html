@@ -42,8 +42,12 @@
           <button type="button" data-example="cycle">Three-way cycle</button>
           <button type="button" data-example="merchant">Fan-in to a merchant</button>
           <button type="button" data-example="random">Random 40</button>
+          <button type="button" id="mainnet" class="primary">A real mainnet day</button>
+          <label class="file-btn">Import CSV<input type="file" id="csv-file" accept=".csv,text/csv"></label>
         </div>
       </div>
+      <p class="hint" id="mainnet-note" hidden></p>
+      <div class="error-box" id="csv-errors" role="alert" hidden></div>
       <p class="hint">Amounts are whole units of the asset. Each row is one obligation: the debtor owes the creditor.</p>
       <table class="obligations">
         <thead><tr><th scope="col">Debtor</th><th scope="col">Creditor</th><th scope="col">Asset</th><th scope="col" class="num">Amount</th><th scope="col"><span class="sr">Remove</span></th></tr></thead>
