@@ -35,6 +35,10 @@ criterion = { version = "0.8", default-features = false }
 name = "net"
 harness = false
 
+[[example]]
+name = "mainnet_day"
+required-features = ["csv"]
+
 [lints.rust]
 unsafe_code = "forbid"
 missing_docs = "warn"

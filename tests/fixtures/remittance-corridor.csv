@@ -1,0 +1,8 @@
+id,debtor,creditor,asset,amount
+1,anchor-ng,anchor-us,USDC,5000000000
+2,anchor-us,anchor-ng,USDC,3200000000
+3,anchor-ng,anchor-ke,USDC,1100000000
+4,anchor-ke,anchor-us,USDC,900000000
+5,anchor-us,anchor-ke,USDC,1250000000
+6,anchor-eu,anchor-ng,EURC,700000000
+7,anchor-ng,anchor-eu,EURC,650000000

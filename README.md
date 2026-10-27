@@ -32,6 +32,13 @@ What the reference cases in [`tests/vectors`](tests/vectors) show:
 | 200 pseudo-random, USDC | 145 | 715.48 → 141.83 | 80.2% | 11 |
 | Fan-in to one merchant | 5 | 150 → 150 | 0% | 5 |
 
+And on real data: every USDC payment between 10 institutions (exchanges,
+Circle and others) on Stellar mainnet on 2026-10-21, 336 payments and
+55.5 million USDC, would have settled in **9 transfers instead of 336**. Value
+moved fell only 3.9% that day, because the flows were mostly one-way; the
+gain is 37 times fewer transactions to sign, fee and reconcile.
+[How it was measured, and its limits](docs/mainnet-day.md).
+
 ## Install
 
 ```sh

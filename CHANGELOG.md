@@ -8,6 +8,13 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- A real mainnet day: `tools/mainnet_day.py` builds a netting window from one
+  UTC day of USDC payments between institutions on Stellar, and
+  `examples/mainnet_day.rs` nets it. On 2026-10-21, 336 payments between 10
+  institutions settle in 9 transfers ([method and limits](docs/mainnet-day.md)).
+- Simulator: **A real mainnet day** loads that day, showing results in USDC,
+  and **Import CSV** reads `id,debtor,creditor,asset,amount` files in the page,
+  reporting malformed lines by number while loading the rest.
 - `setoff-engine-wasm` (`bindings/wasm`): the netting engine for JavaScript,
   with per-row validation errors and both plan strategies.
 - A [netting simulator](https://setoff-org.github.io/setoff-engine/) on

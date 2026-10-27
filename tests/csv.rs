@@ -43,6 +43,19 @@ fn writes_the_plan_for_payments_systems() {
     }
 }
 
+/// The simulator's CSV import is checked against this file, so it must stay
+/// the remittance-corridor vector exactly.
+#[test]
+fn the_corridor_csv_is_the_reference_vector() {
+    let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests");
+    let from_csv = read_csv(std::fs::File::open(format!("{dir}/fixtures/remittance-corridor.csv")).unwrap()).unwrap();
+    let vector: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(format!("{dir}/vectors/remittance-corridor.json")).unwrap())
+            .unwrap();
+    let from_json: Vec<setoff_engine::Obligation> = serde_json::from_value(vector["obligations"].clone()).unwrap();
+    assert_eq!(from_csv, from_json);
+}
+
 #[test]
 fn awkward_names_are_quoted() {
     let n = net(&[setoff_engine::Obligation::new("1", "Acme, Inc.", "B \"Co\"", "USDC", 9)]).unwrap();
