@@ -42,7 +42,7 @@ gain is 37 times fewer transactions to sign, fee and reconcile.
 ## Install
 
 ```sh
-cargo add setoff-engine --git https://github.com/SetOff-Org/setoff-engine --tag v0.1.0
+cargo add setoff-engine --git https://github.com/SetOff-Org/setoff-engine --tag v0.2.0
 ```
 
 The crate is `no_std` with `alloc` when built with `default-features = false`,
